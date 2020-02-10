@@ -132,10 +132,11 @@ export class Visual implements IVisual {
             format = function (d: any) { return formatNumber(d) + " !"; };
 
         // Create the sankey
+        // TODO: option to change node width 
         var sankey = d3Sankey.sankey()
             .nodeWidth(10)
             .nodePadding(bestPadding)
-            .size([width, height * 0.9]);
+            .size([width, height * 0.9]); // TODO: 0.9 multiplier is because height calculations seem to not be 100%, so 0.9 is to avoid clipping of the SVG
 
         // Create links generator
         var linksParent = this._createLinksParent();
@@ -146,13 +147,13 @@ export class Visual implements IVisual {
         // Generate the sankey from the data 
         sankey(this._data);
 
-        // TODO: Clean this up
-        // add values to nodes
+        // TODO: Clean this up 
         this._data.nodes.forEach(function (d: SNodeExtra) {
-            // get height for each node
+            // Set width and heigh of each node
             d.dx = d.x1 - d.x0;
             d.dy = d.y1 - d.y0;
-            // check if the name is a number
+
+            // Check if the name is a number
             // TODO: doesn't work in typescript 
             // all the time for some reason
             // if (!isNaN(+d.name)) {
@@ -160,8 +161,9 @@ export class Visual implements IVisual {
             // }
         })
 
-        // Sort the nodes based on the storying algorithm i.e. 
+        // Sort the nodes based on the sorting algorithm i.e. 
         // Size, Alphagetical, Efficiency
+        // TODO: sorting
         this._sortNodes(sankey, this._data);
 
         // Create the links 
@@ -171,11 +173,15 @@ export class Visual implements IVisual {
         this._generateNodes(nodesParent, this._data, format, width, this._getNodeColor);
 
         // Add the gradients to the links
+        // TODO: option to not have gradient
         this._gradientLinks(linksParent, this._data, this._getNodeColor);
 
     }
 
     private _getNodeColor(d: SNodeExtra, data: AlluvialDataModel): string {
+        
+        // TODO: Add preconfigured colour ranges
+        // TODO: Add step independent colour ranges
         // var color = d3.interpolateRgb("#50E6FF", "#243A5E");
         var color = d3.interpolateCubehelix("#AC0086", "#FFA500");
         
@@ -193,6 +199,7 @@ export class Visual implements IVisual {
 
     private _getLinkData(nodeData: SNodeExtra[], powerBiStepsData: powerbi.DataViewCategoryColumn[], sizeData: powerbi.DataViewValueColumn) {
         let linkData: Array<SLinkExtra> = [];
+
         // For all steps
         for (var i = 0; i < powerBiStepsData.length - 1; i++) {
             let fromValues = powerBiStepsData[i].values;
@@ -226,16 +233,20 @@ export class Visual implements IVisual {
     }
 
     private _resetAndClearSVG(options: VisualUpdateOptions) {
+        // Reset the width and height
         this.svg.attr("width", options.viewport.width)
             .attr("height", options.viewport.height);
 
+        // Clear the SVG completely 
         this.svg.selectAll("*").remove();
-        // append a defs (for definition) element to your SVG
+
+        // Add back in the def's element
         this.defs = this.svg.append('defs');
     }
+
     private _generateLinks(linksParent, data, format, colorFunction) {
 
-        var gid = this.getGradId;
+        var gid = this._getGradId;
 
         linksParent = linksParent
             .data(data.links)
@@ -252,7 +263,8 @@ export class Visual implements IVisual {
             .text(function (d: any) { return d.source.name + " → " + d.target.name + "\n" + format(d.value); });
     }
 
-    private getGradId(d: SLinkExtra) {
+    // Generate a unique ID which is used for gradients
+    private _getGradId(d: SLinkExtra) {
         var s = (d.source as unknown) as SNodeExtra;
         var t = (d.target as unknown) as SNodeExtra;
 
@@ -262,10 +274,11 @@ export class Visual implements IVisual {
         return id;
     }
 
+    // Applies the gradient to the all the links
     private _gradientLinks(linksParent, data: AlluvialDataModel, colorFunction) {
         var _defs = this.defs;
 
-        var _getGradId = this.getGradId;
+        var _getGradId = this._getGradId;
 
         var grads = _defs.selectAll("linearGradient")
             .data(data.links);
@@ -292,8 +305,9 @@ export class Visual implements IVisual {
             .attr("y2", function (d) { return d.target.y1; });
     }
 
+    // Generates all the nodes and node labels in the sankey
     private _generateNodes(nodesParent, data, format, width, colorFunction) {
-        // Create the nodes 
+        
         nodesParent = nodesParent
             .data(data.nodes)
             .enter().append("g");
@@ -307,22 +321,27 @@ export class Visual implements IVisual {
                 return colorFunction(d, data);
             })
             .attr("stroke", "#000");
-
+        
+        // TODO: option to not have text i.e. anonymous data 
         nodesParent.append("text")
             .attr("x", function (d: any) { return d.x0 - 6; })
             .attr("y", function (d: any) { return (d.y1 + d.y0) / 2; })
             .attr("dy", "0.35em")
             .attr("text-anchor", "end")
-            .text(function (d: any) { return d.name; })
+            .text(function (d: any) {
+                d.name; 
+            })
             .attr("font-family", "Arial, Helvetica")
             .attr("font-size", 15)
             .filter(function (d: any) { return d.x0 < width / 2; })
             .attr("x", function (d: any) { return d.x1 + 6; })
             .attr("text-anchor", "start");
 
+        // TODO: option to not have text i.e. anonymous data 
         nodesParent.append("title")
             .text(function (d: any) { return d.name + "\n" + format(d.value); });
     }
+
     private _createNodesParent() {
         return this.svg.append("g")
             .attr("class", "nodes")
@@ -330,6 +349,7 @@ export class Visual implements IVisual {
             .attr("font-size", 10)
             .selectAll("g");
     }
+
     private _createLinksParent() {
         return this.svg.append("g")
             .attr("class", "links")
@@ -338,8 +358,9 @@ export class Visual implements IVisual {
             .attr("stroke-opacity", 0.4)
             .selectAll("path");
     }
+
     private _sortNodes(sankey: d3Sankey.SankeyLayout<d3Sankey.SankeyGraph<{}, {}>, {}, {}>, data: AlluvialDataModel) {
-        // Re-sorting nodes
+        
         var nested = d3.nest<SNodeExtra, number>()
             .key(function (d: SNodeExtra) {
                 return d.group;
@@ -348,12 +369,15 @@ export class Visual implements IVisual {
         nested
             .forEach(function (nestedNodes) {
 
+                // TODO: Previous code used for align middle.  Add back in.
                 // var y = (height() - d3.sum(d.values, function(n) {
                 //     return n.dy + sankey.nodePadding();
                 // })) / 2 + sankey.nodePadding() / 2;
 
                 // This is to make it flat across the top
-                // which is great for reports, just not for 
+                // which is great for reports, but may not 
+                // be wanted for web
+                // TODO: Add align top, align bottom, and align middle
                 var y = 0;
                 var sortBy: String = "size";
 
@@ -375,7 +399,7 @@ export class Visual implements IVisual {
                 })
             })
 
-        // Resorting links
+        // Re-sort the links now the nodes have been all sorted
         nested.forEach(function (d) {
 
             d.values.forEach(function (node) {
@@ -404,7 +428,6 @@ export class Visual implements IVisual {
             })
         })
     }
-
 
     private _onlyUnique(value: any, index: number, self: Array<any>): boolean {
         return self.indexOf(value) === index;
