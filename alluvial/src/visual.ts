@@ -329,7 +329,7 @@ export class Visual implements IVisual {
             .attr("dy", "0.35em")
             .attr("text-anchor", "end")
             .text(function (d: any) {
-                d.name; 
+                return d.name; 
             })
             .attr("font-family", "Arial, Helvetica")
             .attr("font-size", 15)
