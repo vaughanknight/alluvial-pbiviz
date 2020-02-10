@@ -1,0 +1,56 @@
+{
+    "dataRoles": [
+        {
+            "displayName": "Values",
+            "name": "dr_values",
+            "kind": "Grouping"
+        },
+        {
+            "displayName": "Labels",
+            "name": "dr_labels",
+            "kind": "Grouping"
+        },
+        {
+            "displayName": "Size",
+            "name": "dr_size",
+            "kind": "Measure"
+        },
+        {
+            "displayName": "Series",
+            "name": "series",
+            "kind": "Measure"
+        }
+    ],
+    "objects": {
+       
+    }, 
+    "dataViewMappings": [
+        {
+            "categorical": {
+                "categories": {
+                "select": [
+                    {"for": {
+                        "in": "dr_values"
+                    }},
+                    {"for": {
+                        "in": "dr_labels"
+                    }},
+                    {"for": {
+                        "in": "dr_size"
+                    }}
+                ]} ,
+                "values": {
+                    "group": {
+                        "by": "series",
+                        "select": [{
+                                "for": {
+                                    "in": "dr_size"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }       
+    ]
+}
