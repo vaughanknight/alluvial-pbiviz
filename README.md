@@ -7,4 +7,4 @@ Very early days, current version looks something like the below.
 
 Colours range was generated from d3.interpolateCubehelix("#AC0086", "#FFA500");
 
-// put image here
+![Recent PowerBI Alluvial Example](https://github.com/vaughanknight/alluvial-pbiviz/blob/master/img/alluvial_powerbi_recent_example.png?raw=true)
