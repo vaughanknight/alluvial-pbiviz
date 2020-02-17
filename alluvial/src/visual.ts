@@ -45,7 +45,10 @@ import * as d3ScaleChromatic from 'd3-scale-chromatic';
 import { packEnclose, color } from "d3";
 type Selection<T extends d3.BaseType> = d3.Selection<T, any, any, any>;
 
-// Alluvial PowerBI Visual
+/**
+ * Alluvial PowerBI Custom Visual to generate
+ * highly compelling alluvial diagrams for PowerBI.
+ */
 export class Visual implements IVisual {
     private target: HTMLElement;
 
@@ -68,6 +71,11 @@ export class Visual implements IVisual {
             .append('svg');
     }
 
+    /**
+     * PowerBI Update Method called from PowerBI when the control is 
+     * updated.
+     * @param options PowerBI VisualUpdateOptions
+     */
     public update(options: VisualUpdateOptions) {
         let dataView: DataView = options.dataViews[0];
 
@@ -203,6 +211,12 @@ export class Visual implements IVisual {
 
     }
 
+    /**
+     * Gets the node color based on the current color configuration
+     * @param d The node to calculate the desired color
+     * @param data The overall data model
+     * @param visualSettings Visual settings that contain the color configuration
+     */
     private _getNodeColor(d: SNodeExtra, data: AlluvialDataModel, visualSettings: VisualSettings): string 
     {
         var colors: { (t: number): string; }[] = [d3.interpolateRgb("#50E6FF", "#243A5E"),
@@ -588,6 +602,9 @@ interface SLinkExtra {
 type SNode = d3Sankey.SankeyNode<SNodeExtra, SLinkExtra>;
 type SLink = d3Sankey.SankeyLink<SNodeExtra, SLinkExtra>;
 
+/**
+ * Basic Alluvial Data Model
+ */
 interface AlluvialDataModel {
     nodes: SNode[];
     links: SLink[];
