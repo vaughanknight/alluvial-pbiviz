@@ -22,27 +22,265 @@
         }
     ],
     "objects": {
-       
-    }, 
+        "circle": {
+            "displayName": "My Object Name",
+            "properties": {
+                "circleColor": {
+                    "displayName": "My Property Switch",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "circleThickness": {
+                    "displayName": "My Property Switch",
+                    "type": {
+                        "bool": true
+                    }
+                }
+            }
+        },
+        "alluvial": {
+            "displayName": "Alluvial",
+            "properties": {
+                "lineOpacity": {
+                    "displayName": "Line Opacity",
+                    "type": {
+                        "numeric": true
+                    }
+                },
+                "sorting": {
+                    "displayName": "Sort By",
+                    "displayNameKey": "Sort_By_Key",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "none",
+                                "displayName": "None"
+                            },
+                            {
+                                "value": "size",
+                                "displayName": "Size"
+                            },
+                            {
+                                "value": "automatic",
+                                "displayName": "Automatic"
+                            },
+                            {
+                                "value": "name",
+                                "displayName": "Name"
+                            }
+                        ]
+                    }
+                },
+                "colorSettings": {
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "gradient",
+                                "displayName": "Gradient"
+                            },
+                            {
+                                "value": "ordinal",
+                                "displayName": "Ordinal"
+                            }
+                        ]
+                    }
+                },
+                "predfinedInterpolation": {
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "interpolateBuGn",
+                                "displayName": "interpolateBuGn"
+                            },
+                            {
+                                "value": "interpolateBuPu",
+                                "displayName": "interpolateBuPu"
+                            },
+                            {
+                                "value": "interpolateGnBu",
+                                "displayName": "interpolateGnBu"
+                            },
+                            {
+                                "value": "interpolateOrRd",
+                                "displayName": "interpolateOrRd"
+                            },
+                            {
+                                "value": "interpolatePiYG",
+                                "displayName": "interpolatePiYG"
+                            },
+                            {
+                                "value": "interpolatePuBuGn",
+                                "displayName": "interpolatePuBuGn"
+                            },
+                            {
+                                "value": "interpolatePuBu",
+                                "displayName": "interpolatePuBu"
+                            },
+                            {
+                                "value": "interpolatePuOr",
+                                "displayName": "interpolatePuOr"
+                            },
+                            {
+                                "value": "interpolatePuRd",
+                                "displayName": "interpolatePuRd"
+                            },
+                            {
+                                "value": "interpolateRdPu",
+                                "displayName": "interpolateRdPu"
+                            },
+                            {
+                                "value": "interpolateRdYlGn",
+                                "displayName": "interpolateRdYlGn"
+                            },
+                            {
+                                "value": "interpolateRdBu",
+                                "displayName": "interpolateRdBu"
+                            },
+                            {
+                                "value": "interpolateRdYlBu",
+                                "displayName": "interpolateRdYlBu"
+                            },
+                            {
+                                "value": "interpolateYlGn",
+                                "displayName": "interpolateYlGn"
+                            },
+                            {
+                                "value": "interpolateYlGnBu",
+                                "displayName": "interpolateYlGnBu"
+                            },
+                            {
+                                "value": "interpolateYlOrRd",
+                                "displayName": "interpolateYlOrRd"
+                            },
+                            {
+                                "value": "interpolateYlOrBr",
+                                "displayName": "interpolateYlOrBr"
+                            },
+                            {
+                                "value": "interpolateViridis",
+                                "displayName": "interpolateViridis"
+                            },
+                            {
+                                "value": "interpolateCool",
+                                "displayName": "interpolateCool"
+                            },
+                            {
+                                "value": "interpolateCubehelixDefault",
+                                "displayName": "interpolateCubehelixDefault"
+                            },
+                            {
+                                "value": "interpolateWarm",
+                                "displayName": "interpolateWarm"
+                            },
+                            {
+                                "value": "interpolateSpectral",
+                                "displayName": "interpolateSpectral"
+                            },
+                            {
+                                "value": "interpolateRainbow",
+                                "displayName": "interpolateRainbow"
+                            },
+                            {
+                                "value": "interpolatePlasma",
+                                "displayName": "interpolatePlasma"
+                            },
+                            {
+                                "value": "interpolateMagma",
+                                "displayName": "interpolateMagma"
+                            },
+                            {
+                                "value": "interpolateInferno",
+                                "displayName": "interpolateInferno"
+                            },
+                            {
+                                "value": "interpolateBlues",
+                                "displayName": "interpolateBlues"
+                            },
+                            {
+                                "value": "interpolateReds",
+                                "displayName": "interpolateReds"
+                            },
+                            {
+                                "value": "interpolateGreens",
+                                "displayName": "interpolateGreens"
+                            },
+                            {
+                                "value": "interpolateGreys",
+                                "displayName": "interpolateGreys"
+                            },
+                            {
+                                "value": "interpolatePurples",
+                                "displayName": "interpolatePurples"
+                            },
+                            {
+                                "value": "interpolateOranges",
+                                "displayName": "interpolateOranges"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "lineGradient": {
+            "displayName": "Color Pallette",
+            "properties": {
+                "useGradient": {
+                    "displayName": "Use Gradient",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "startColor": {
+                    "displayName": "Start Color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "endColor": {
+                    "displayName": "End Color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
     "dataViewMappings": [
         {
             "categorical": {
                 "categories": {
-                "select": [
-                    {"for": {
-                        "in": "dr_values"
-                    }},
-                    {"for": {
-                        "in": "dr_labels"
-                    }},
-                    {"for": {
-                        "in": "dr_size"
-                    }}
-                ]} ,
+                    "select": [
+                        {
+                            "for": {
+                                "in": "dr_values"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "dr_labels"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "dr_size"
+                            }
+                        }
+                    ]
+                },
                 "values": {
                     "group": {
                         "by": "series",
-                        "select": [{
+                        "select": [
+                            {
                                 "for": {
                                     "in": "dr_size"
                                 }
@@ -51,6 +289,6 @@
                     }
                 }
             }
-        }       
+        }
     ]
 }

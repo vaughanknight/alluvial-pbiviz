@@ -37,7 +37,7 @@ import DataView = powerbi.DataView;
 import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 
-import { VisualSettings } from "./settings";
+import { VisualSettings, AlluvialSortBy, AlluvialColors } from './settings';
 import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration;
 import * as d3 from "d3";
 import * as d3Sankey from 'd3-sankey';
@@ -49,7 +49,7 @@ type Selection<T extends d3.BaseType> = d3.Selection<T, any, any, any>;
 export class Visual implements IVisual {
     private target: HTMLElement;
 
-    private settings: VisualSettings;
+    // private settings: VisualSettings;
 
     private host: IVisualHost;
     private svg: Selection<SVGElement>;
@@ -75,16 +75,27 @@ export class Visual implements IVisual {
             return category.source.roles["dr_values"];
         });
 
+        // console.log("STEP: Have steps.");
+        // console.log(powerBiStepsData);
+
         let powerBiSizeData: powerbi.DataViewValueColumn;
-        if (dataView.categorical.values.length > 0) {
-            var sizeValues = dataView.categorical.values.filter(function (value) {
-                return value.source.roles["dr_size"]; 
-            });
-            if (sizeValues.length > 0) {
-                powerBiSizeData = sizeValues[0];
-                console.log(powerBiSizeData);
+
+        if (dataView.categorical.categories.length > 0) {
+
+            // console.log("STEP: length > 0.");
+
+            if (dataView.categorical.values) {
+                var sizeValues = dataView.categorical.values.filter(function (value) {
+                    return value.source.roles["dr_size"];
+                });
+                if (sizeValues.length > 0) {
+                    powerBiSizeData = sizeValues[0];
+
+                }
             }
         }
+
+        // console.log("STEP: Have tried size.");
 
         // Reset and clear
         this._resetAndClearSVG(options);
@@ -93,20 +104,32 @@ export class Visual implements IVisual {
         if (powerBiStepsData.length < 2)
             return;
 
+        this.visualSettings = VisualSettings.parse<VisualSettings>(dataView);
+
         // Parse the settings
-        this.settings = Visual.parseSettings(options && options.dataViews && options.dataViews[0]);
+        // this.settings = Visual.parseSettings(options && options.dataViews && options.dataViews[0]);
+
+        // console.log(this.settings);
+
+        // console.log("STEP: Have settings.");
 
         // Create the node data
         let nodeData = this._getNodeData(powerBiStepsData);
 
+        // console.log("STEP: Have node data.");
+
         // Create the link data 
         let linkData: Array<SLinkExtra> = this._getLinkData(nodeData, powerBiStepsData, powerBiSizeData);
+
+        // console.log("STEP: Have link data.");
 
         // Data 
         this._data = {
             "nodes": nodeData,
             "links": linkData
         };
+
+        // console.log("STEP: Have node and link data.");
 
         // Calculating the best nodePadding (TODO: improve)
         var nested = d3.nest<SNodeExtra, number>()
@@ -136,7 +159,7 @@ export class Visual implements IVisual {
         var sankey = d3Sankey.sankey()
             .nodeWidth(10)
             .nodePadding(bestPadding)
-            .size([width, height * 0.9]); // TODO: 0.9 multiplier is because height calculations seem to not be 100%, so 0.9 is to avoid clipping of the SVG
+            .size([width, height - 10]); // TODO: 0.9 multiplier is because height calculations seem to not be 100%, so 0.9 is to avoid clipping of the SVG
 
         // Create links generator
         var linksParent = this._createLinksParent();
@@ -173,28 +196,52 @@ export class Visual implements IVisual {
         this._generateNodes(nodesParent, this._data, format, width, this._getNodeColor);
 
         // Add the gradients to the links
-        // TODO: option to not have gradient
-        this._gradientLinks(linksParent, this._data, this._getNodeColor);
+        // TODO: option to not have 
+        if (this.visualSettings.lineGradient.useGradient) {
+            this._gradientLinks(linksParent, this._data, this._getNodeColor);
+        }
 
     }
 
-    private _getNodeColor(d: SNodeExtra, data: AlluvialDataModel): string {
-        
-        // TODO: Add preconfigured colour ranges
-        // TODO: Add step independent colour ranges
-        // var color = d3.interpolateRgb("#50E6FF", "#243A5E");
-        var color = d3.interpolateCubehelix("#AC0086", "#FFA500");
-        
-        var colorGenerator = d3.scaleSequential(color).domain([0, 1]);
+    private _getNodeColor(d: SNodeExtra, data: AlluvialDataModel, visualSettings: VisualSettings): string 
+    {
+        var colors: { (t: number): string; }[] = [d3.interpolateRgb("#50E6FF", "#243A5E"),
+        d3.interpolateCubehelix("#50E6FF", "#3B2E58"), // Cyan to Dark Purple
+        d3.interpolateCubehelix("#9BF00B", "#274B47"), // Yellow/green to dark jade
+        d3.interpolateCubehelix("#AC0086", "#FFA500")];
 
+        var color = d3.interpolateRgb("#50E6FF", "#243A5E");
+        
         var groupList = data.nodes.filter(function (n) {
             return n.group == d.group;
         });
 
-        var itemIndex = groupList.map(function (n) { return n.name; }).indexOf(d.name);
-        var colorValue = itemIndex / groupList.length;
+        var nameList = groupList.map(function (n) { return n.name; });
+        var itemIndex = nameList.indexOf(d.name);
+        var colorValue = (itemIndex + 3) / groupList.length;
 
-        return colorGenerator(colorValue);
+        switch(visualSettings.alluvial.colorSettings)
+        {
+            case AlluvialColors.Ordinal:
+                {
+                    var colorOrdinal = d3[visualSettings.alluvial.predfinedInterpolation];
+
+                    var c = colorOrdinal(colorValue);
+                    return c;
+                }
+            case AlluvialColors.Gradient:
+                {
+                    if (visualSettings && visualSettings.lineGradient.useGradient) {
+                        color = d3.interpolateCubehelix(visualSettings.lineGradient.startColor.toString(),
+                            visualSettings.lineGradient.endColor.toString());
+                    }
+
+                    var colorScale = d3.scaleSequential(color).domain([0, 1]);
+
+                    return colorScale(colorValue);
+                }
+        }
+
     }
 
     private _getLinkData(nodeData: SNodeExtra[], powerBiStepsData: powerbi.DataViewCategoryColumn[], sizeData: powerbi.DataViewValueColumn) {
@@ -203,32 +250,53 @@ export class Visual implements IVisual {
         // For all steps
         for (var i = 0; i < powerBiStepsData.length - 1; i++) {
             let fromValues = powerBiStepsData[i].values;
-            let toValues = powerBiStepsData[i+1].values;
-            let sizes = sizeData.values;
+            let toValues = powerBiStepsData[i + 1].values;
 
             // For each node in this step
             for (var j = 0; j < fromValues.length; j++) {
-                var sourceIndex = nodeData.map(function (n) { return n.name; }).indexOf(fromValues[j].toString());
-                var targetIndex = nodeData.map(function (n) { return n.name; }).indexOf(toValues[j].toString());
+                var size = 1;
+                if (sizeData) {
+                    var sizes = sizeData.values;
+                    size = +sizes[j]
+                }
+                // console.log(sourceNode);
+                // console.log(targetNode);
+
+                var sourceIndex = nodeData.map(function (n) { return n.name; }).indexOf(
+                    fromValues[j].toString());
+                var targetIndex = nodeData.map(function (n) { return n.name; }).indexOf(
+                    toValues[j] ? toValues[j].toString() : "");
                 var sourceNode = nodeData[sourceIndex];
                 var targetNode = nodeData[targetIndex];
 
-                linkData.push({ source: sourceNode, target: targetNode, value: +sizes[j] });
+                linkData.push({ source: sourceNode, target: targetNode, value: size });
             }
         }
         return linkData;
     }
 
     private _getNodeData(powerBiNodeData: powerbi.DataViewCategoryColumn[]) {
+        // console.log("STEP: getNodeData");
+        // console.log(powerBiNodeData);
+
         var nodeData: Array<SNodeExtra> = [];
         for (var i = 0; i < powerBiNodeData.length; i++) {
             var values = powerBiNodeData[i].values.filter(this._onlyUnique);
+
             for (var j = 0; j < values.length; j++) {
+
+                // console.log(`STEP: have node data for: ${i}, ${j}/${values.length-1}`);
+
+                var theName: string = values[j] ? values[j].toString() : "";
                 var theGroup: string = powerBiNodeData[i].source.displayName;
-                var theName: string = values[j].toString();
+                // console.log(theGroup);
+                // var theName: string = values[j].toString();
+
                 nodeData.push({ name: theName, group: theGroup, dx: 0, dy: 0, x0: 0, x1: 0, y0: 0, y1: 0 });
             }
+            // console.log(`STEP: have node data: ${i}`);
         }
+
         return nodeData;
     }
 
@@ -247,17 +315,43 @@ export class Visual implements IVisual {
     private _generateLinks(linksParent, data, format, colorFunction) {
 
         var gid = this._getGradId;
+        var useGrad = this.visualSettings.lineGradient.useGradient;
+        var vs = this.visualSettings;
 
         linksParent = linksParent
             .data(data.links)
             .enter().append("path")
             .attr("d", d3Sankey.sankeyLinkHorizontal())
             .style("stroke", function (d: SLinkExtra) {
-                var stroke = `url(#${gid(d)})`;
-                return stroke;
+                
+                if(useGrad)
+                {
+                    var stroke = `url(#${gid(d)})`;
+                    return stroke;
+                }
+                var c = colorFunction(d.source, data, vs);
+                // console.log(c);
+                return c;
             })
-            .attr("stroke-width", function (d: any) { 
-                return Math.max(1, d.width); });
+            .attr("stroke-width", function (d: any) {
+                return Math.max(1, d.width);
+            })
+            .on("mouseover", function (d: SLinkExtra) {
+
+                linksParent.filter(function (l: SLinkExtra) {
+                    if (l.source == d.source && l.target == d.target)
+                        // console.log(`${l.source.name} and ${d.source.name}`);
+                    return l.source == d.source && l.target == d.target;
+                }).transition()
+                    .duration(700)
+                    .style("opacity", 1);
+
+                // console.log(d);
+                // d.transition()        
+                // .duration(200)      
+                // .style("opacity", .8);               
+            });
+
 
         linksParent.append("title")
             .text(function (d: any) { return d.source.name + " → " + d.target.name + "\n" + format(d.value); });
@@ -269,7 +363,7 @@ export class Visual implements IVisual {
         var t = (d.target as unknown) as SNodeExtra;
 
         var id = `${s.name}-${t.name}`;
-        id = id.replace(/\s/g, '');
+        id = id.replace(/[\W_]+/g, "_");
 
         return id;
     }
@@ -278,6 +372,7 @@ export class Visual implements IVisual {
     private _gradientLinks(linksParent, data: AlluvialDataModel, colorFunction) {
         var _defs = this.defs;
 
+        var _visualSettings = this.visualSettings;
         var _getGradId = this._getGradId;
 
         var grads = _defs.selectAll("linearGradient")
@@ -290,13 +385,13 @@ export class Visual implements IVisual {
         linGrads.append("stop")
             .attr("offset", "0%")
             .attr("stop-color", function (link: SLinkExtra) {
-                return colorFunction(link.source, data);
+                return colorFunction(link.source, data, _visualSettings);
             })
 
         linGrads.append("stop")
             .attr("offset", "100%")
             .attr("stop-color", function (link: SLinkExtra) {
-                return colorFunction(link.target, data);
+                return colorFunction(link.target, data, _visualSettings);
             })
 
         linGrads.attr("x1", function (d) { return d.source.x0; })
@@ -307,7 +402,9 @@ export class Visual implements IVisual {
 
     // Generates all the nodes and node labels in the sankey
     private _generateNodes(nodesParent, data, format, width, colorFunction) {
-        
+
+        var visualSettings = this.visualSettings;
+
         nodesParent = nodesParent
             .data(data.nodes)
             .enter().append("g");
@@ -318,10 +415,10 @@ export class Visual implements IVisual {
             .attr("height", function (d: any) { return d.y1 - d.y0; })
             .attr("width", function (d: any) { return d.x1 - d.x0; })
             .attr("fill", function (d: any, i: number, n: any) {
-                return colorFunction(d, data);
+                return colorFunction(d, data, visualSettings);
             })
             .attr("stroke", "#000");
-        
+
         // TODO: option to not have text i.e. anonymous data 
         nodesParent.append("text")
             .attr("x", function (d: any) { return d.x0 - 6; })
@@ -329,10 +426,11 @@ export class Visual implements IVisual {
             .attr("dy", "0.35em")
             .attr("text-anchor", "end")
             .text(function (d: any) {
-                return d.name; 
+                return d.name;
             })
-            .attr("font-family", "Arial, Helvetica")
-            .attr("font-size", 15)
+            .attr("font-family", "Segoe UI Semibold")
+            // .attr("font-weight", "bold")
+            .attr("font-size", 12)
             .filter(function (d: any) { return d.x0 < width / 2; })
             .attr("x", function (d: any) { return d.x1 + 6; })
             .attr("text-anchor", "start");
@@ -351,16 +449,18 @@ export class Visual implements IVisual {
     }
 
     private _createLinksParent() {
+        var opacity = this.visualSettings.alluvial.lineOpacity;
         return this.svg.append("g")
             .attr("class", "links")
             .attr("fill", "none")
             .attr("stroke", "#000")
-            .attr("stroke-opacity", 0.4)
+            .attr("stroke-opacity", opacity)
             .selectAll("path");
     }
 
     private _sortNodes(sankey: d3Sankey.SankeyLayout<d3Sankey.SankeyGraph<{}, {}>, {}, {}>, data: AlluvialDataModel) {
-        
+
+        var _visualSettings = this.visualSettings;
         var nested = d3.nest<SNodeExtra, number>()
             .key(function (d: SNodeExtra) {
                 return d.group;
@@ -379,17 +479,18 @@ export class Visual implements IVisual {
                 // be wanted for web
                 // TODO: Add align top, align bottom, and align middle
                 var y = 0;
-                var sortBy: String = "size";
+                var sortBy = _visualSettings.alluvial.sorting;
 
                 nestedNodes.values.sort(function (a, b) {
-                    if (sortBy == "automatic") return b.y0 - a.y0;
-                    if (sortBy == "size") return b.dy - a.dy;
+                    if (sortBy == AlluvialSortBy.Automatic) return b.y0 - a.y0;
+                    if (sortBy == AlluvialSortBy.Size) return b.dy - a.dy;
                     //if (sortBy() == "name") return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
-                    if (sortBy == "name") {
+                    if (sortBy == AlluvialSortBy.Name) {
                         var a1 = typeof a.name,
                             b1 = typeof b.name;
                         return a1 < b1 ? -1 : a1 > b1 ? 1 : a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
                     }
+                    return 0;
                 })
 
                 nestedNodes.values.forEach(function (node) {
