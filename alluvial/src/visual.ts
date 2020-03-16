@@ -42,6 +42,7 @@ import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration
 import * as d3 from "d3";
 import * as d3Sankey from 'd3-sankey';
 import * as d3ScaleChromatic from 'd3-scale-chromatic';
+import { saveAs } from 'file-saver';
 import { packEnclose, color } from "d3";
 type Selection<T extends d3.BaseType> = d3.Selection<T, any, any, any>;
 
@@ -50,7 +51,7 @@ type Selection<T extends d3.BaseType> = d3.Selection<T, any, any, any>;
  * highly compelling alluvial diagrams for PowerBI.
  */
 export class Visual implements IVisual {
-    private target: HTMLElement;
+    private _target: HTMLElement;
 
     // private settings: VisualSettings;
 
@@ -62,13 +63,16 @@ export class Visual implements IVisual {
 
     public link: Selection<SVGElement>;
     public node: Selection<SVGElement>;
+    public _downloadLink: HTMLElement = null;
 
     private visualSettings: VisualSettings;
 
     constructor(options: VisualConstructorOptions) {
-        this.target = options.element;
-        this.svg = d3.select(options.element)
+        this._target = options.element;
+
+        this.svg = d3.select(this._target)
             .append('svg');
+
     }
 
     /**
@@ -98,12 +102,9 @@ export class Visual implements IVisual {
                 });
                 if (sizeValues.length > 0) {
                     powerBiSizeData = sizeValues[0];
-
                 }
             }
         }
-
-        // console.log("STEP: Have tried size.");
 
         // Reset and clear
         this._resetAndClearSVG(options);
@@ -209,6 +210,45 @@ export class Visual implements IVisual {
             this._gradientLinks(linksParent, this._data, this._getNodeColor);
         }
 
+      
+
+        if (this._downloadLink == null) {
+            var html = this.svg
+            .attr("version", 1.1)
+            .attr("xmlns", "http://www.w3.org/2000/svg")
+            .node().parentElement.innerHTML;
+            
+            this._downloadLink = document.createElement("a");
+            this._downloadLink.setAttribute("href", "#");
+            this._downloadLink.addEventListener("click", function()
+            {
+                this.DownloadSVG(html);
+            }.bind(this));
+            this._downloadLink.setAttribute("style", "font-color: white; font-size: 12px; position: absolute; left: 0px; bottom: 0px;");
+            this._downloadLink.innerHTML = "DOWNLOAD";
+            
+            this._target.appendChild(this._downloadLink);
+        }
+    }
+
+    public DownloadSVG(html:String)
+    {
+        var isSafari = (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1);
+        var BB = this._getBlob();
+
+        if (isSafari) {
+          var img = "data:image/svg+xml;utf8," + html;
+          var newWindow = window.open(img, 'download');
+        } else {
+          var blob = new BB([html], { type: "data:image/svg+xml" });
+          saveAs(blob, "powerbi_alluvial.svg")
+        }
+    }
+
+    private _getBlob() : any 
+    {
+        //@ts-ignore
+        return window.Blob || window.WebKitBlob || window.MozBlob;
     }
 
     /**
@@ -217,31 +257,31 @@ export class Visual implements IVisual {
      * @param data The overall data model
      * @param visualSettings Visual settings that contain the color configuration
      */
-    private _getNodeColor(d: SNodeExtra, data: AlluvialDataModel, visualSettings: VisualSettings): string 
-    {
+    private _getNodeColor(d: SNodeExtra, data: AlluvialDataModel, visualSettings: VisualSettings): string {
         var colors: { (t: number): string; }[] = [d3.interpolateRgb("#50E6FF", "#243A5E"),
         d3.interpolateCubehelix("#50E6FF", "#3B2E58"), // Cyan to Dark Purple
         d3.interpolateCubehelix("#9BF00B", "#274B47"), // Yellow/green to dark jade
         d3.interpolateCubehelix("#AC0086", "#FFA500")];
-
-        var color = d3.interpolateRgb("#50E6FF", "#243A5E");
         
+        var color = d3.interpolateRgb("#50E6FF", "#243A5E");
+
         var groupList = data.nodes.filter(function (n) {
             return n.group == d.group;
         });
 
         var nameList = groupList.map(function (n) { return n.name; });
         var itemIndex = nameList.indexOf(d.name);
-        var colorValue = (itemIndex + 3) / groupList.length;
+        var colorValue = itemIndex / groupList.length;
 
-        switch(visualSettings.alluvial.colorSettings)
-        {
+        switch (visualSettings.alluvial.colorSettings) {
             case AlluvialColors.Ordinal:
                 {
                     // Predfined interpolations have the interpolation method available
                     // in d3, so d3[interpolationString] will match
                     var colorOrdinal = d3[visualSettings.alluvial.predfinedInterpolation];
+                    colorOrdinal = d3.scaleSequential(colorOrdinal).domain([-0.5, 1]);
                     return colorOrdinal(colorValue);
+                    
                 }
             case AlluvialColors.Gradient:
                 {
@@ -279,7 +319,7 @@ export class Visual implements IVisual {
                     var sizes = sizeData.values;
                     size = +sizes[j]
                 }
-               
+
                 var sourceIndex = nodeData.map(function (n) { return n.name; }).indexOf(
                     fromValues[j].toString());
                 var targetIndex = nodeData.map(function (n) { return n.name; }).indexOf(
@@ -348,8 +388,7 @@ export class Visual implements IVisual {
             .attr("d", d3Sankey.sankeyLinkHorizontal())
             .style("stroke", function (d: SLinkExtra) {
                 // TODO: Clean this up as useGrad is no obvious in configurations
-                if(useGrad)
-                {
+                if (useGrad) {
                     var stroke = `url(#${gid(d)})`;
                     return stroke;
                 }
@@ -363,7 +402,7 @@ export class Visual implements IVisual {
                 // TODO: Mouse Over
                 linksParent.filter(function (l: SLinkExtra) {
                     if (l.source == d.source && l.target == d.target)
-                    return l.source == d.source && l.target == d.target;
+                        return l.source == d.source && l.target == d.target;
                 }).transition()
                     .duration(700)
                     .style("opacity", 1);

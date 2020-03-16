@@ -5,14 +5,14 @@
         "guid": "d3test00CB9A74B1F34FDCA219CB28AC237F91",
         "visualClassName": "Visual",
         "version": "1.0.0",
-        "description": "",
-        "supportUrl": "",
-        "gitHubUrl": ""
+        "description": "Alluvial diagram",
+        "supportUrl": "http://nowhere.com",
+        "gitHubUrl": "http://nowhere.com"
     },
     "apiVersion": "2.6.0",
     "author": {
-        "name": "",
-        "email": ""
+        "name": "Vaughan Knight",
+        "email": "vaughan@vaughanknight.com"
     },
     "assets": {
         "icon": "assets/icon.png"

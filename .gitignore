@@ -7,6 +7,11 @@ lib-cov
 *.pid
 *.gz
 *.swp
+*.pbiviz
+*-lock.json
+.tmp
+
+webpack.statistics.*
 
 pids
 logs
@@ -40,3 +45,4 @@ dist/**/*
 # ignore yarn.lock
 yarn.lock
 alluvial/webpack.statistics.dev.html
+heatmatrix/webpack.statistics.dev.html
