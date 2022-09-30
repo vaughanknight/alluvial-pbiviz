@@ -40,6 +40,7 @@ import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import { VisualSettings, AlluvialSortBy, AlluvialColors } from './settings';
 import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration;
 import * as d3 from "d3";
+import * as d32 from "d3-array";
 import * as d3Sankey from 'd3-sankey';
 import * as d3ScaleChromatic from 'd3-scale-chromatic';
 import { saveAs } from 'file-saver';
@@ -81,14 +82,19 @@ export class Visual implements IVisual {
      * @param options PowerBI VisualUpdateOptions
      */
     public update(options: VisualUpdateOptions) {
+        try
+        {
+        
         let dataView: DataView = options.dataViews[0];
 
+        console.log(dataView.categorical.categories);
+
         let powerBiStepsData = dataView.categorical.categories.filter(function (category) {
-            return category.source.roles["dr_values"];
+            return category.values;
         });
 
-        // console.log("STEP: Have steps.");
-        // console.log(powerBiStepsData);
+        console.log("STEP: Have steps.");
+        console.log(powerBiStepsData);
 
         let powerBiSizeData: powerbi.DataViewValueColumn;
 
@@ -101,7 +107,7 @@ export class Visual implements IVisual {
                     return value.source.roles["dr_size"];
                 });
                 if (sizeValues.length > 0) {
-                    powerBiSizeData = sizeValues[0];
+                    powerBiSizeData = sizeValues[0]; 
                 }
             }
         }
@@ -125,7 +131,8 @@ export class Visual implements IVisual {
         // Create the node data
         let nodeData = this._getNodeData(powerBiStepsData);
 
-        // console.log("STEP: Have node data.");
+        console.log("STEP: Have node data.");
+        console.log(nodeData);
 
         // Create the link data 
         let linkData: Array<SLinkExtra> = this._getLinkData(nodeData, powerBiStepsData, powerBiSizeData);
@@ -141,18 +148,37 @@ export class Visual implements IVisual {
         // console.log("STEP: Have node and link data.");
 
         // Calculating the best nodePadding (TODO: improve)
-        var nested = d3.nest<SNodeExtra, number>()
-            .key(function (d: SNodeExtra): string {
-                return d.group;
-            })
-            .rollup(function (d) {
-                return d.length;
-            })
-            .entries(this._data.nodes);
+        // var nested = d3.group<SNodeExtra, number>()
+        //     .key(function (d: SNodeExtra): string {
+        //         return d.group;
+        //     })
+        //     .rollup(function (d) {
+        //         return d.length;
+        //     })
+        //     .entries(this._data.nodes);
 
-        var maxNodes = d3.max(nested, function (d) {
-            return d.values;
-        });
+        
+        var nested : Map<string, number> = d32.rollup(this._data.nodes, v => v.length, d=> d.group);
+
+        
+
+        console.log("Have nested");
+        console.log(nested);
+        // var maxNodes = d3.max(nested, function (d) {
+        //     return d.values;
+        // });
+       
+
+        console.log("Have theValues");
+        var theValues = nested.values();
+        console.log(theValues);
+
+        var numbers = Array.from(nested.values());
+
+        // d32.max(nested.entries, d => d )
+        var maxNodes = d3.max<number>(numbers);
+        
+        console.log("have max nodes:" + maxNodes);      
 
         // Get width and height and set padding 
         var width = +this.svg.attr("width");
@@ -229,19 +255,41 @@ export class Visual implements IVisual {
             
             this._target.appendChild(this._downloadLink);
         }
+        }
+        catch(e)
+        {
+            console.log(e);
+        }
     }
 
     public DownloadSVG(html:String)
     {
-        var isSafari = (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1);
-        var BB = this._getBlob();
+        console.log("Downloading...");
+        try
+        {
+            var isSafari = (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1);
+            console.log("Is safari? " + isSafari);
+            var BB = this._getBlob();
+            
 
-        if (isSafari) {
-          var img = "data:image/svg+xml;utf8," + html;
-          var newWindow = window.open(img, 'download');
-        } else {
-          var blob = new BB([html], { type: "data:image/svg+xml" });
-          saveAs(blob, "powerbi_alluvial.svg")
+            if (isSafari) {
+              var img = "data:image/svg+xml;utf8," + html;
+              var newWindow = window.open(img, 'download');
+            } else {
+              console.log("Saving...");
+              var blob = new BB([html], { type: "data:image/svg+xml" });
+
+              console.log("Have blob...");
+              console.log(blob);
+              
+              saveAs(blob, "powerbi_alluvial.svg");
+
+              console.log("saved?");
+            }   
+        }
+        catch(e)
+        {
+            console.log(e);
         }
     }
 
@@ -530,12 +578,20 @@ export class Visual implements IVisual {
         // TODO: Sankey doesn't need to be an argument, nodePadding is the only thing leveraged
         // which could be in visual settings
         var _visualSettings = this.visualSettings;
-        var nested = d3.nest<SNodeExtra, number>()
-            .key(function (d: SNodeExtra) {
-                return d.group;
-            })
-            .entries(data.nodes)
-        nested
+        // var nested = d3.nest<SNodeExtra, number>()
+        //     .key(function (d: SNodeExtra) {
+        //         return d.group;
+        //     })
+        //     .entries(data.nodes)
+
+        //     d3.group<SNodeExtra, number>(data.nodes, d => d.group);
+        
+        var grouped = d32.group(this._data.nodes, d=> d.group);
+
+        console.log("Have grouped");
+        console.log(grouped);
+
+        grouped
             .forEach(function (nestedNodes) {
 
                 // TODO: Previous code used for align middle.  Add back in.
@@ -550,7 +606,10 @@ export class Visual implements IVisual {
                 var y = 0;
                 var sortBy = _visualSettings.alluvial.sorting;
 
-                nestedNodes.values.sort(function (a, b) {
+                console.log("NestedNodes");
+                console.log(nestedNodes);
+                
+                nestedNodes.sort(function (a, b) {
                     if (sortBy == AlluvialSortBy.Automatic) return b.y0 - a.y0;
                     if (sortBy == AlluvialSortBy.Size) return b.dy - a.dy;
 
@@ -562,7 +621,7 @@ export class Visual implements IVisual {
                     return 0;
                 })
 
-                nestedNodes.values.forEach(function (node) {
+                nestedNodes.forEach(function (node) {
                     node.y0 = y;
                     node.y1 = node.y0 + node.dy;
                     y += node.dy + sankey.nodePadding();
@@ -570,9 +629,9 @@ export class Visual implements IVisual {
             })
 
         // Re-sort the links now the nodes have been all sorted
-        nested.forEach(function (d) {
+        grouped.forEach(function (d) {
 
-            d.values.forEach(function (node) {
+            Array.from(d.values()).forEach(function (node) {  
 
                 var ly = node.y0;
 

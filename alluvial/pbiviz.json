@@ -1,15 +1,15 @@
 {
     "visual": {
-        "name": "d3test",
-        "displayName": "d3test",
-        "guid": "d3test00CB9A74B1F34FDCA219CB28AC237F91",
+        "name": "alluvial",
+        "displayName": "Alluvial",
+        "guid": "alluvialE7103E1F775E4F80986C3929A424155B",
         "visualClassName": "Visual",
         "version": "1.0.0",
-        "description": "Alluvial diagram",
+        "description": "Alluvial Diagram",
         "supportUrl": "http://nowhere.com",
         "gitHubUrl": "http://nowhere.com"
     },
-    "apiVersion": "2.6.0",
+    "apiVersion": "3.8.0",
     "author": {
         "name": "Vaughan Knight",
         "email": "vaughan@vaughanknight.com"

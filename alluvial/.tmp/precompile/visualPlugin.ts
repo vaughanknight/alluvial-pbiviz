@@ -1,29 +1,32 @@
 import { Visual } from "../../src/visual";
-import powerbiVisualsApi from "powerbi-visuals-api"
-import IVisualPlugin = powerbiVisualsApi.visuals.plugins.IVisualPlugin
-import VisualConstructorOptions = powerbiVisualsApi.extensibility.visual.VisualConstructorOptions
+import powerbiVisualsApi from "powerbi-visuals-api";
+import IVisualPlugin = powerbiVisualsApi.visuals.plugins.IVisualPlugin;
+import VisualConstructorOptions = powerbiVisualsApi.extensibility.visual.VisualConstructorOptions;
+import DialogConstructorOptions = powerbiVisualsApi.extensibility.visual.DialogConstructorOptions;
 var powerbiKey: any = "powerbi";
 var powerbi: any = window[powerbiKey];
-
-var d3test00CB9A74B1F34FDCA219CB28AC237F91_DEBUG: IVisualPlugin = {
-    name: 'd3test00CB9A74B1F34FDCA219CB28AC237F91_DEBUG',
-    displayName: 'd3test',
+var alluvial2E7103E1F775E4F80986C3929A424155B_DEBUG: IVisualPlugin = {
+    name: 'alluvial2E7103E1F775E4F80986C3929A424155B_DEBUG',
+    displayName: 'alluvial2',
     class: 'Visual',
-    apiVersion: '2.6.0',
-    create: (options?: VisualConstructorOptions) => {
+    apiVersion: '3.8.0',
+    create: (options: VisualConstructorOptions) => {
         if (Visual) {
             return new Visual(options);
         }
-
         throw 'Visual instance not found';
+    },
+    createModalDialog: (dialogId: string, options: DialogConstructorOptions, initialState: object) => {
+        const dialogRegistry = globalThis.dialogRegistry;
+        if (dialogId in dialogRegistry) {
+            new dialogRegistry[dialogId](options, initialState);
+        }
     },
     custom: true
 };
-
 if (typeof powerbi !== "undefined") {
     powerbi.visuals = powerbi.visuals || {};
     powerbi.visuals.plugins = powerbi.visuals.plugins || {};
-    powerbi.visuals.plugins["d3test00CB9A74B1F34FDCA219CB28AC237F91_DEBUG"] = d3test00CB9A74B1F34FDCA219CB28AC237F91_DEBUG;
+    powerbi.visuals.plugins["alluvial2E7103E1F775E4F80986C3929A424155B_DEBUG"] = alluvial2E7103E1F775E4F80986C3929A424155B_DEBUG;
 }
-
-export default d3test00CB9A74B1F34FDCA219CB28AC237F91_DEBUG;
+export default alluvial2E7103E1F775E4F80986C3929A424155B_DEBUG;
